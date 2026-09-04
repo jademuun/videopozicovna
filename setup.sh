@@ -27,7 +27,9 @@ mkdir -p \
   "${DATA_ROOT}/media/movies" \
   "${DATA_ROOT}/media/tv" \
   "${DATA_ROOT}/torrents/complete" \
-  "${DATA_ROOT}/torrents/incomplete"
+  "${DATA_ROOT}/torrents/incomplete" \
+  "${DATA_ROOT}/torrents/radarr" \
+  "${DATA_ROOT}/torrents/sonarr"
 
 echo "Creating config folders under ${CONFIG_ROOT}..."
 mkdir -p \
