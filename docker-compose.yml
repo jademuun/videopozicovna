@@ -124,7 +124,7 @@ services:
       - PASS=${TRANSMISSION_PASS}
     volumes:
       - ${CONFIG_ROOT}/transmission:/config
-      - ${DATA_ROOT}/torrents:/data/torrents
+      - ${DATA_ROOT}:/data
     restart: unless-stopped
 
   # Cloudflare Bypass for Prowlarr
