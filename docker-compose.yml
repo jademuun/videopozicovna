@@ -130,6 +130,7 @@ services:
     volumes:
       - ${CONFIG_ROOT}/transmission:/config
       - ${DATA_ROOT}:/data
+      - ${DATA_ROOT}/watch:/watch
     restart: unless-stopped
 
   # Watches Gluetun's forwarded port and pushes it into Transmission automatically
