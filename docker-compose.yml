@@ -2,6 +2,9 @@ networks:
   media-network:
     name: media-network
 
+volumes:
+  gluetun-port:
+
 services:
   # Media Player and Streamer
   jellyfin:
@@ -106,6 +109,8 @@ services:
       - TZ=${TZ}
     ports:
       - 9091:9091
+    volumes:
+      - gluetun-port:/tmp/gluetun
     restart: unless-stopped
     networks:
       - media-network
@@ -126,6 +131,35 @@ services:
       - ${CONFIG_ROOT}/transmission:/config
       - ${DATA_ROOT}:/data
     restart: unless-stopped
+
+  # Watches Gluetun's forwarded port and pushes it into Transmission automatically
+  port-sync:
+    image: curlimages/curl:latest
+    container_name: port-sync
+    depends_on:
+      - gluetun
+      - transmission
+    network_mode: "service:gluetun"
+    environment:
+      - TRANSMISSION_USER=${TRANSMISSION_USER}
+      - TRANSMISSION_PASS=${TRANSMISSION_PASS}
+    volumes:
+      - gluetun-port:/tmp/gluetun:ro
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        last=""
+        while true; do
+          port=$$(cat /tmp/gluetun/forwarded_port 2>/dev/null)
+          if [ -n "$$port" ] && [ "$$port" != "$$last" ]; then
+            sid=$$(curl -s -D - -o /dev/null -u "$$TRANSMISSION_USER:$$TRANSMISSION_PASS" http://127.0.0.1:9091/transmission/rpc | grep -i X-Transmission-Session-Id | tr -d '\r' | awk '{print $$2}')
+            curl -s -u "$$TRANSMISSION_USER:$$TRANSMISSION_PASS" -H "X-Transmission-Session-Id: $$sid" -d "{\"method\":\"session-set\",\"arguments\":{\"peer-port\":$$port}}" http://127.0.0.1:9091/transmission/rpc > /dev/null \
+              && echo "Synced Transmission peer-port to $$port" \
+              && last="$$port"
+          fi
+          sleep 30
+        done
 
   # Cloudflare Bypass for Prowlarr
   flaresolverr:

@@ -31,6 +31,7 @@ flowchart LR
 | Bazarr | Subtitle downloader | 6767 |
 | Transmission | Torrent client (network routed through Gluetun) | 9091 |
 | Gluetun | ProtonVPN WireGuard gateway + port forwarding | — |
+| port-sync | Auto-syncs Gluetun's forwarded port into Transmission | — |
 | FlareSolverr | Solves Cloudflare challenges for Prowlarr | — |
 
 ## Prerequisites
@@ -124,8 +125,14 @@ Configure the apps in this order — each step depends on the previous one:
 
 - **Transmission shows "port closed"**: this stack routes Transmission's
   traffic through Gluetun/ProtonVPN, which handles NAT-PMP port forwarding
-  automatically (`VPN_PORT_FORWARDING=on` in the compose file) — check
-  `docker compose logs gluetun` for the forwarded port and connection status.
+  automatically (`VPN_PORT_FORWARDING=on` in the compose file). ProtonVPN
+  assigns this port dynamically and it can change on every reconnect/restart
+  — it cannot be pinned to a fixed number. The `port-sync` container watches
+  Gluetun's forwarded port file and pushes the current value into
+  Transmission's `peer-port` automatically, so you don't need to check
+  `docker compose logs gluetun` and update Transmission by hand. Check
+  `docker compose logs port-sync` if Transmission still shows "port closed"
+  a while after startup.
   If you're behind ISP-level CGNAT (a "Public IPv4" in the `100.64.0.0/10`
   range on your router that doesn't match `whatismyip.com`), regular router
   port forwarding will never work — this is exactly why Gluetun/ProtonVPN is
@@ -153,5 +160,3 @@ Configure the apps in this order — each step depends on the previous one:
   auth wall in front of all admin UIs, restricting direct exposure to the LAN.
 - Jellyseerr/Overseerr for a friendly request UI.
 - Optional swap to qBittorrent (categories make multi-app download management easier).
-- Script to auto-sync Transmission's peer port whenever ProtonVPN reassigns
-  the forwarded port.
