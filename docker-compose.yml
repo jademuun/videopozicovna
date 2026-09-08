@@ -170,19 +170,20 @@ services:
     environment:
       - TZ=${TZ}
     volumes:
-      - ${DATA_ROOT}:/data:ro
+      - ${DATA_ROOT}:/data
       - clamav-db:/var/lib/clamav
       - ${CONFIG_ROOT}/clamav/logs:/var/log/clamav
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        mkdir -p /var/log/clamav
+        mkdir -p /var/log/clamav /data/quarantine
         while true; do
           echo "[$$(date)] Updating virus definitions..."
           freshclam --stdout --user=root || echo "freshclam update failed, scanning with existing definitions"
           echo "[$$(date)] Scanning files modified in the last 24h..."
-          find /data -type f -mtime -1 -print0 | xargs -0 --no-run-if-empty clamscan -i --log=/var/log/clamav/scan.log
+          find /data -type f -mtime -1 -not -path '/data/quarantine/*' -print0 \
+            | xargs -0 --no-run-if-empty clamscan -i --move=/data/quarantine --log=/var/log/clamav/scan.log
           chmod 644 /var/log/clamav/scan.log 2>/dev/null || true
           echo "[$$(date)] Scan complete. Sleeping 24h..."
           sleep 86400

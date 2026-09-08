@@ -125,10 +125,27 @@ Configure the apps in this order — each step depends on the previous one:
 
 ## Malware scanning (ClamAV)
 
-The `clamav` service scans `${DATA_ROOT}` (read-only) once a day: it updates
-virus definitions, then runs `clamscan` against only the files modified in
-the last 24h (not the whole library every time — see "Why incremental"
-below). Results land in `${CONFIG_ROOT}/clamav/logs/scan.log`.
+The `clamav` service scans `${DATA_ROOT}` once a day: it updates virus
+definitions, then runs `clamscan` against only the files modified in the
+last 24h (not the whole library every time — see "Why incremental" below).
+Results land in `${CONFIG_ROOT}/clamav/logs/scan.log`.
+
+**Infected files are automatically quarantined** — `clamscan --move` relocates
+any match to `${DATA_ROOT}/quarantine/` the moment it's found, out of any
+path Jellyfin/Radarr/Sonarr would ever look at. This is why the container
+has read-write access to `${DATA_ROOT}` (not read-only): `--move` has to
+delete the file from its original location, which a read-only mount would
+block. If you'd rather nothing gets touched automatically, drop `--move=...`
+from the `clamscan` command and revert the mount back to `:ro` — infections
+will still be logged and still trigger a desktop notification (below), just
+without relocating the file for you.
+
+A quarantined file is **not automatically deleted** — it just moves out of
+the library. Decide what to do with it yourself:
+```bash
+ls "$DATA_ROOT/quarantine"                   # see what's been caught
+rm "$DATA_ROOT/quarantine/<filename>"        # actually delete it, once you're sure
+```
 
 **Checking for infections:**
 ```bash

@@ -30,7 +30,8 @@ mkdir -p \
   "${DATA_ROOT}/torrents/incomplete" \
   "${DATA_ROOT}/torrents/radarr" \
   "${DATA_ROOT}/torrents/sonarr" \
-  "${DATA_ROOT}/watch"
+  "${DATA_ROOT}/watch" \
+  "${DATA_ROOT}/quarantine"
 
 echo "Creating config folders under ${CONFIG_ROOT}..."
 mkdir -p \
