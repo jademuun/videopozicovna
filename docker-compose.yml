@@ -181,8 +181,8 @@ services:
         while true; do
           echo "[$$(date)] Updating virus definitions..."
           freshclam --stdout || echo "freshclam update failed, scanning with existing definitions"
-          echo "[$$(date)] Starting scan of /data..."
-          clamscan -r -i --log=/var/log/clamav/scan.log /data
+          echo "[$$(date)] Scanning files modified in the last 24h..."
+          find /data -type f -mtime -1 -print0 | xargs -0 --no-run-if-empty clamscan -i --log=/var/log/clamav/scan.log
           echo "[$$(date)] Scan complete. Sleeping 24h..."
           sleep 86400
         done
