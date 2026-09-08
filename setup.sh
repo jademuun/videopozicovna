@@ -29,7 +29,8 @@ mkdir -p \
   "${DATA_ROOT}/torrents/complete" \
   "${DATA_ROOT}/torrents/incomplete" \
   "${DATA_ROOT}/torrents/radarr" \
-  "${DATA_ROOT}/torrents/sonarr"
+  "${DATA_ROOT}/torrents/sonarr" \
+  "${DATA_ROOT}/watch"
 
 echo "Creating config folders under ${CONFIG_ROOT}..."
 mkdir -p \
@@ -39,7 +40,8 @@ mkdir -p \
   "${CONFIG_ROOT}/sonarr" \
   "${CONFIG_ROOT}/bazarr" \
   "${CONFIG_ROOT}/gluetun" \
-  "${CONFIG_ROOT}/transmission"
+  "${CONFIG_ROOT}/transmission" \
+  "${CONFIG_ROOT}/clamav/logs"
 
 echo "Setting ownership to ${PUID}:${PGID}..."
 chown -R "${PUID}:${PGID}" "${DATA_ROOT}" "${CONFIG_ROOT}"
