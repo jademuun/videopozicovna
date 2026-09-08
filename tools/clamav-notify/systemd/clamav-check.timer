@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the ClamAV check shortly after login/reboot
+
+[Timer]
+# Fires once, ~30s after your systemd --user session starts (i.e. after you
+# log in — including after a reboot). This does NOT fire on resume from
+# sleep/suspend, since your user session isn't restarted then; see
+# systemd-sleep/90-clamav-resume-check for that half.
+OnBootSec=30sec
+Persistent=true
+
+[Install]
+WantedBy=timers.target

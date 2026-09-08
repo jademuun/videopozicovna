@@ -1,0 +1,18 @@
+#!/bin/sh
+# Installed by root at /etc/systemd/system-sleep/90-clamav-resume-check
+# systemd-logind calls every executable in that directory around suspend/
+# resume, passing $1=pre|post and $2=suspend|hibernate|hybrid-sleep. This
+# runs the desktop-notification check as the real user right after resume
+# (system-level systemd is the only thing that sees sleep/resume at all —
+# a normal user session has no visibility into it).
+#
+# CHANGE_ME: replace with the actual desktop username if different from
+# the user who installs this stack.
+TARGET_USER="arthas"
+
+case "$1" in
+  post)
+    runtime_dir="/run/user/$(id -u "$TARGET_USER")"
+    runuser -l "$TARGET_USER" -c "XDG_RUNTIME_DIR=$runtime_dir systemctl --user start clamav-check.service" &
+    ;;
+esac

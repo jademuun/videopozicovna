@@ -1,0 +1,6 @@
+[Unit]
+Description=Check harrison's ClamAV scan log and notify on infections
+
+[Service]
+Type=oneshot
+ExecStart=__SCRIPT_PATH__

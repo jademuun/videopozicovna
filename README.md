@@ -157,6 +157,34 @@ actual malware vector for torrented content is a smuggled executable or
 script bundled alongside the media, which is almost always small enough to
 fall well within the scannable range.
 
+### Optional: desktop notifications on infection
+
+`tools/clamav-notify/` is a small, separate, **local-machine-only** tool —
+not part of the Docker stack, and not something a fresh clone needs to run
+the stack itself. It's for whoever administers the server from their own
+Linux desktop and wants a heads-up if ClamAV ever finds something, without
+manually checking `scan.log`.
+
+It works by SSHing from your desktop to the server on a schedule, reading
+the latest `SCAN SUMMARY` block, and firing a native `notify-send` popup
+only if that run found an infected file (and only once per distinct run —
+it won't re-alert on the same finding).
+
+**Install** (run on your desktop, not the server):
+```bash
+cd tools/clamav-notify
+./install.sh
+```
+This sets up a `systemd --user` timer that runs the check ~30s after you log
+in (covering reboots). It prints one more command at the end — a `sudo`
+step to install a resume-from-sleep hook, which needs root because
+suspend/resume events are only visible to system-level systemd, never to a
+normal user session. That step isn't automated on purpose: it modifies
+`/etc/systemd/system-sleep/`, so it's left for you to run deliberately.
+
+See `tools/clamav-notify/check-clamav-harrison.sh` for the actual check
+logic, and adjust `HOST`/`REMOTE_LOG` at the top if your setup differs.
+
 ## Troubleshooting
 
 - **Transmission shows "port closed"**: this stack routes Transmission's
