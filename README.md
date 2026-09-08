@@ -20,6 +20,7 @@ flowchart LR
     Sonarr -->|move/hardlink| Media
     Bazarr -->|fetch subtitles| Media
     Jellyfin -->|serve library| Media
+    ClamAV -.daily malware scan.-> Media
 ```
 
 | Service | Role | Port |
@@ -33,6 +34,7 @@ flowchart LR
 | Gluetun | ProtonVPN WireGuard gateway + port forwarding | — |
 | port-sync | Auto-syncs Gluetun's forwarded port into Transmission | — |
 | FlareSolverr | Solves Cloudflare challenges for Prowlarr | — |
+| ClamAV | Daily malware scan of files added in the last 24h | — |
 
 ## Prerequisites
 
@@ -120,6 +122,40 @@ Configure the apps in this order — each step depends on the previous one:
    `/data/torrents/...` (matching the shared mount).
 3. **Bazarr** (`:6767`) — connect to Radarr/Sonarr under Settings → Sonarr/Radarr.
 4. **Jellyfin** (`:8096`) — add a library pointing at `/data/media`.
+
+## Malware scanning (ClamAV)
+
+The `clamav` service scans `${DATA_ROOT}` (read-only) once a day: it updates
+virus definitions, then runs `clamscan` against only the files modified in
+the last 24h (not the whole library every time — see "Why incremental"
+below). Results land in `${CONFIG_ROOT}/clamav/logs/scan.log`.
+
+**Checking for infections:**
+```bash
+cat "$CONFIG_ROOT/clamav/logs/scan.log"     # full history, one SCAN SUMMARY block per run
+grep -i FOUND "$CONFIG_ROOT/clamav/logs/scan.log"   # only ever prints a line if something was flagged
+docker compose logs clamav                   # live output of the current/last run
+```
+An empty result from the `grep` command means nothing has ever been flagged.
+Each run's `SCAN SUMMARY` block also reports `Infected files: 0` (or a
+non-zero count if something was caught).
+
+**Why incremental, not a full scan every day:** re-scanning the whole
+library nightly is wasteful once it's already been checked once. `find
+-mtime -1` restricts each run to files touched in the last day, which lines
+up with the loop's own 24h interval. This means **anything already on disk
+before ClamAV was first deployed needs one manual full-library scan** to be
+covered at all — see `docker compose logs clamav` if you're unsure whether
+that's been done yet on your install.
+
+**Known limitation:** ClamAV's scanning engine cannot inspect any single
+file larger than 2GiB − 1 byte — this is a hard limit in the engine itself,
+not a configurable option. Large remuxes (e.g. 20-30GB Blu-ray remuxes) will
+never be content-scanned by this tool. In practice this is a low real-world
+risk: a well-formed video container can't execute code on its own — the
+actual malware vector for torrented content is a smuggled executable or
+script bundled alongside the media, which is almost always small enough to
+fall well within the scannable range.
 
 ## Troubleshooting
 
