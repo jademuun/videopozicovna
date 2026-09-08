@@ -4,6 +4,7 @@ networks:
 
 volumes:
   gluetun-port:
+  clamav-db:
 
 services:
   # Media Player and Streamer
@@ -160,6 +161,30 @@ services:
               && last="$$port"
           fi
           sleep 30
+        done
+
+  # Scans downloaded media for malware/viruses on a daily schedule
+  clamav:
+    image: clamav/clamav:latest
+    container_name: clamav
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${DATA_ROOT}:/data:ro
+      - clamav-db:/var/lib/clamav
+      - ${CONFIG_ROOT}/clamav/logs:/var/log/clamav
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /var/log/clamav
+        while true; do
+          echo "[$$(date)] Updating virus definitions..."
+          freshclam --stdout || echo "freshclam update failed, scanning with existing definitions"
+          echo "[$$(date)] Starting scan of /data..."
+          clamscan -r -i --log=/var/log/clamav/scan.log /data
+          echo "[$$(date)] Scan complete. Sleeping 24h..."
+          sleep 86400
         done
 
   # Cloudflare Bypass for Prowlarr
